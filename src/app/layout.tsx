@@ -3,52 +3,9 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
-const siteUrl = "https://git-stats.vercel.app";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: "git-stats — Flex your programmer stats",
-    template: "%s | git-stats",
-  },
-  description:
-    "Visualize and share your GitHub contribution stats. See your commit streaks, top languages, and activity at a glance.",
-  keywords: [
-    "github stats",
-    "git stats",
-    "developer stats",
-    "github contributions",
-    "coding activity",
-    "programmer portfolio",
-  ],
-  authors: [{ name: "git-stats" }],
-  creator: "git-stats",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: siteUrl,
-    siteName: "git-stats",
-    title: "git-stats — Flex your programmer stats",
-    description:
-      "Visualize and share your GitHub contribution stats. See your commit streaks, top languages, and activity at a glance.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "git-stats — Flex your programmer stats",
-    description:
-      "Visualize and share your GitHub contribution stats. See your commit streaks, top languages, and activity at a glance.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  title: "git stats",
+  description: "Local git commit activity viewer",
 };
 
 export default function RootLayout({
@@ -59,9 +16,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
+      className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-screen bg-background text-foreground">
         {children}
       </body>
     </html>
