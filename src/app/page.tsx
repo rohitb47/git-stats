@@ -90,10 +90,10 @@ function DailyChart({ data }: { data: { label: string; value: number }[] }) {
       style={{ overflow: "visible" }}
     >
       {/* grid + y labels */}
-      {gridValues.map((v) => {
+      {gridValues.map((v, gi) => {
         const y = padT + innerH - (v / maxVal) * innerH;
         return (
-          <g key={v}>
+          <g key={gi}>
             <line
               x1={padL}
               y1={y}
@@ -211,10 +211,10 @@ function HourlyChart({
       style={{ overflow: "visible" }}
     >
       {/* grid */}
-      {gridValues.map((v) => {
+      {gridValues.map((v, gi) => {
         const y = padT + innerH - (v / maxVal) * innerH;
         return (
-          <g key={v}>
+          <g key={gi}>
             <line
               x1={padL}
               y1={y}
