@@ -1,31 +1,7 @@
-# git-stats
+## git-stats
 
-> Flex your programmer stats
+Stats across your git repos for today, 7 days, and last 10 days.
 
-Visualize and share your GitHub contribution stats — commit streaks, top languages, and activity at a glance.
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fed7a148-86f1-4676-aa32-37d7f2338a90" />
 
-## Tech Stack
-
-- [Next.js](https://nextjs.org) — React framework with App Router
-- [motion/react](https://motion.dev) — Animation library
-- [Lucide React](https://lucide.dev) — Icon library
-- [Tailwind CSS](https://tailwindcss.com) — Utility-first styling
-- [TypeScript](https://www.typescriptlang.org) — Type safety
-
-## Getting Started
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the app.
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
+Nothing fancy, just one off tool, feel free to fork and use.
