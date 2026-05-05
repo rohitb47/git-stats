@@ -328,6 +328,98 @@ function HourlyChart({
   );
 }
 
+// ─── Today repo chart ─────────────────────────────────────────────────────────
+
+function TodayRepoChart({ data }: { data: { repo: string; value: number }[] }) {
+  if (data.length === 0)
+    return (
+      <div className="h-32 flex items-center text-xs opacity-70">
+        no commits today
+      </div>
+    );
+
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
+  const rowH = 28;
+  const padL = 4;
+  const padR = 40;
+  const padT = 12;
+  const W = 560;
+  const H = padT + data.length * rowH + 4;
+  const barMaxW = W - padL - padR;
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full"
+      style={{ overflow: "visible" }}
+    >
+      {data.map((d, i) => {
+        const y = padT + i * rowH;
+        const barW = Math.max(4, (d.value / maxVal) * barMaxW);
+        const shortRepo = d.repo.includes("/") ? d.repo.split("/")[1] : d.repo;
+        return (
+          <g key={d.repo}>
+            {/* background track */}
+            <rect
+              x={padL}
+              y={y + 4}
+              width={barMaxW}
+              height={16}
+              fill="currentColor"
+              fillOpacity={0.04}
+              rx={3}
+            />
+            {/* filled bar */}
+            <rect
+              x={padL}
+              y={y + 4}
+              width={barW}
+              height={16}
+              fill="#10b981"
+              fillOpacity={0.75}
+              rx={3}
+            />
+            {/* repo label inside or left of bar */}
+            <text
+              x={padL + 6}
+              y={y + 16}
+              fontSize={10}
+              fill="white"
+              fillOpacity={barW > 60 ? 0.9 : 0}
+            >
+              {shortRepo}
+            </text>
+            {barW <= 60 && (
+              <text
+                x={padL + barW + 6}
+                y={y + 16}
+                fontSize={10}
+                fill="currentColor"
+                fillOpacity={0.7}
+              >
+                {shortRepo}
+              </text>
+            )}
+            {/* count on the right */}
+            <text
+              x={padL + barMaxW + 6}
+              y={y + 16}
+              fontSize={10}
+              fill="#10b981"
+              fillOpacity={0.9}
+            >
+              {d.value}
+            </text>
+            <title>
+              {d.repo}: {d.value} commit{d.value !== 1 ? "s" : ""}
+            </title>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
 const FILTERS = [
@@ -398,7 +490,7 @@ export default function StatsView({
     }
   }
 
-  const { dailyData, hourlyData, stats } = useMemo(() => {
+  const { dailyData, hourlyData, repoData, stats } = useMemo(() => {
     const commits: Commit[] = data.commits;
     // Use viewer's local timezone for all date math
     const nowLocal = new Date(nowMs);
@@ -468,9 +560,21 @@ export default function StatsView({
       }
     }
 
+    // repo breakdown for today view
+    const repoMap = new Map<string, number>();
+    if (filter === "today") {
+      for (const c of filtered) {
+        repoMap.set(c.repo, (repoMap.get(c.repo) ?? 0) + 1);
+      }
+    }
+    const repoData = Array.from(repoMap.entries())
+      .map(([repo, value]) => ({ repo, value }))
+      .sort((a, b) => b.value - a.value);
+
     return {
       dailyData,
       hourlyData,
+      repoData,
       stats: {
         total,
         repos,
@@ -557,15 +661,20 @@ export default function StatsView({
       </div>
 
       {/* charts */}
-      <div
-        className={`grid gap-10 ${filter !== "today" ? "grid-cols-2" : "grid-cols-1"}`}
-      >
-        {filter !== "today" && (
-          <div>
-            <ChartLabel>commits per day</ChartLabel>
-            <DailyChart data={dailyData} />
-          </div>
-        )}
+      <div className="grid grid-cols-2 gap-10">
+        <div>
+          {filter === "today" ? (
+            <>
+              <ChartLabel>repos touched today</ChartLabel>
+              <TodayRepoChart data={repoData} />
+            </>
+          ) : (
+            <>
+              <ChartLabel>commits per day</ChartLabel>
+              <DailyChart data={dailyData} />
+            </>
+          )}
+        </div>
         <div>
           <ChartLabel>commits by hour of day</ChartLabel>
           <HourlyChart data={hourlyData} peakStart={stats.peakStart} />

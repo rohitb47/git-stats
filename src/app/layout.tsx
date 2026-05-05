@@ -78,7 +78,15 @@ export default async function RootLayout({
               by rohit bajaj
             </a>
           </div>
-          {children}
+          {/* mobile / tablet — not yet responsive */}
+          <div className="flex lg:hidden min-h-[70vh] items-center justify-center px-8 text-center">
+            <p className="text-sm opacity-60 max-w-xs leading-relaxed">
+              we&apos;re working on making git-stats responsive for smaller
+              screens. for now, it&apos;s only available on larger screens.
+            </p>
+          </div>
+          {/* desktop content */}
+          <div className="hidden lg:block">{children}</div>
           <footer className="py-8 flex items-center justify-center gap-6 text-sm opacity-70 2xl:text-base">
             <a href="/" className="hover:opacity-80 transition-opacity">
               home
