@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ type Commit = {
 type ScanResult = {
   commits: Commit[];
   repoCount: number;
+  login: string;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -380,36 +382,41 @@ function ChartLabel({ children }: { children: React.ReactNode }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [basePath, setBasePath] = useState("~/Documents/GitHub");
-  const [author, setAuthor] = useState("");
+  const { data: session, status } = useSession();
   const [filter, setFilter] = useState<Filter>("10d");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    fetch("/api/git-stats")
-      .then((r) => r.json())
-      .then((d: { name?: string }) => {
-        if (d.name) setAuthor(d.name);
-      })
-      .catch(() => {});
-  }, []);
+    if (status === "authenticated" && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      setLoading(true);
+      setError(null);
+      fetch("/api/git-stats")
+        .then((r) => r.json())
+        .then((data: ScanResult & { error?: string }) => {
+          if (data.error) throw new Error(data.error);
+          setResult(data);
+        })
+        .catch((e: unknown) =>
+          setError(e instanceof Error ? e.message : "fetch failed"),
+        )
+        .finally(() => setLoading(false));
+    }
+  }, [status]);
 
-  async function scan() {
+  async function refresh() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/git-stats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ basePath, author }),
-      });
+      const res = await fetch("/api/git-stats");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "scan failed");
+      if (!res.ok) throw new Error(data.error ?? "fetch failed");
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "scan failed");
+      setError(e instanceof Error ? e.message : "fetch failed");
     } finally {
       setLoading(false);
     }
@@ -503,43 +510,61 @@ export default function Home() {
     };
   }, [result, filter]);
 
+  // Show a centred sign-in screen while unauthenticated
+  if (status === "unauthenticated") {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center gap-6">
+        <h1 className="text-sm font-medium opacity-40 tracking-tight">git stats</h1>
+        <p className="text-xs opacity-30 max-w-xs text-center">
+          see your commit activity across all your GitHub repos
+        </p>
+        <button
+          onClick={() => signIn("github")}
+          className="px-5 py-2 text-sm rounded border border-current/15 hover:border-current/30 transition-colors cursor-pointer flex items-center gap-2"
+        >
+          <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+          connect github
+        </button>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-5xl mx-auto px-8 py-10 space-y-8">
       {/* header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-sm font-medium opacity-40 tracking-tight">
-          git stats
-        </h1>
+        <h1 className="text-sm font-medium opacity-40 tracking-tight">git stats</h1>
+        <div className="flex items-center gap-3">
+          {session?.user?.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={session.user.image}
+              alt={session.user.login ?? ""}
+              className="w-5 h-5 rounded-full opacity-50"
+            />
+          )}
+          <span className="text-xs opacity-25 font-mono">{session?.user?.login}</span>
+          <button
+            onClick={() => signOut()}
+            className="text-xs opacity-25 hover:opacity-50 transition-opacity cursor-pointer"
+          >
+            sign out
+          </button>
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="text-xs opacity-25 hover:opacity-50 transition-opacity disabled:opacity-15 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {loading ? "loading…" : "refresh"}
+          </button>
+        </div>
       </div>
 
-      {/* inputs */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={basePath}
-          onChange={(e) => setBasePath(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && scan()}
-          className="flex-1 bg-transparent border border-current/10 rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-current/25 placeholder:opacity-20"
-          placeholder="~/Documents/GitHub"
-          spellCheck={false}
-        />
-        <input
-          type="text"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && scan()}
-          className="w-56 bg-transparent border border-current/10 rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-current/25 placeholder:opacity-20"
-          placeholder="author (optional)"
-          spellCheck={false}
-        />
-        <button
-          onClick={scan}
-          disabled={loading}
-          className="px-5 py-1.5 text-sm rounded border border-current/10 hover:border-current/25 transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
-        >
-          {loading ? "scanning…" : "scan"}
-        </button>
-      </div>
+      {status === "loading" || (loading && !result) ? (
+        <p className="text-xs opacity-25">fetching your commits…</p>
+      ) : null}
 
       {error && <p className="text-xs opacity-50">{error}</p>}
 
