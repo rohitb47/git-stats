@@ -39,6 +39,14 @@ function formatDate(dateStr: string): string {
   return `${MONTHS[parseInt(m, 10) - 1]} ${parseInt(d, 10)}`;
 }
 
+function localDateStr(ts: number): string {
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mo}-${day}`;
+}
+
 // ─── Daily chart ──────────────────────────────────────────────────────────────
 
 function DailyChart({ data }: { data: { label: string; value: number }[] }) {
@@ -354,11 +362,7 @@ function Stat({
 }
 
 function ChartLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-sm tracking-wide opacity-70 mb-4">
-      {children}
-    </p>
-  );
+  return <p className="text-sm tracking-wide opacity-70 mb-4">{children}</p>;
 }
 
 // ─── StatsView ────────────────────────────────────────────────────────────────
@@ -396,30 +400,31 @@ export default function StatsView({
 
   const { dailyData, hourlyData, stats } = useMemo(() => {
     const commits: Commit[] = data.commits;
-    // Use UTC throughout so server and client compute identical date strings
-    const nowUtc = new Date(nowMs);
-    nowUtc.setUTCHours(0, 0, 0, 0);
-    const todayStr = nowUtc.toISOString().substring(0, 10);
+    // Use viewer's local timezone for all date math
+    const nowLocal = new Date(nowMs);
+    nowLocal.setHours(0, 0, 0, 0);
+    const todayStr = localDateStr(nowLocal.getTime());
     const filterDef = FILTERS.find((f) => f.id === filter)!;
 
     let filtered: Commit[];
     if (filter === "today") {
-      filtered = commits.filter((c) => c.date === todayStr);
+      filtered = commits.filter((c) => localDateStr(c.timestamp) === todayStr);
     } else {
-      const cutoff = new Date(nowUtc);
-      cutoff.setUTCDate(cutoff.getUTCDate() - filterDef.days + 1);
+      const cutoff = new Date(nowLocal);
+      cutoff.setDate(cutoff.getDate() - filterDef.days + 1);
       filtered = commits.filter((c) => c.timestamp >= cutoff.getTime());
     }
 
     const dayMap = new Map<string, number>();
     if (filter !== "today") {
       for (let i = filterDef.days - 1; i >= 0; i--) {
-        const d = new Date(nowUtc);
-        d.setUTCDate(d.getUTCDate() - i);
-        dayMap.set(d.toISOString().substring(0, 10), 0);
+        const d = new Date(nowLocal);
+        d.setDate(d.getDate() - i);
+        dayMap.set(localDateStr(d.getTime()), 0);
       }
       for (const c of filtered) {
-        dayMap.set(c.date, (dayMap.get(c.date) ?? 0) + 1);
+        const key = localDateStr(c.timestamp);
+        dayMap.set(key, (dayMap.get(key) ?? 0) + 1);
       }
     }
     const dailyData = Array.from(dayMap.entries()).map(([date, value]) => ({
@@ -431,7 +436,8 @@ export default function StatsView({
       label: formatHourShort(i),
       value: 0,
     }));
-    for (const c of filtered) hourlyData[c.hour].value++;
+    for (const c of filtered)
+      hourlyData[new Date(c.timestamp).getHours()].value++;
 
     let peakStart = 0;
     let peakSum = 0;
@@ -480,9 +486,7 @@ export default function StatsView({
     <main className="container mx-auto px-12 py-14 space-y-10">
       {/* header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-base font-medium tracking-tight">
-          git-stats
-        </h1>
+        <h1 className="text-base font-medium tracking-tight">git-stats</h1>
         <div className="flex items-center gap-3">
           {userImage && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -492,9 +496,7 @@ export default function StatsView({
               className="w-7 h-7 rounded-full opacity-70"
             />
           )}
-          <span className="text-sm opacity-70 font-mono">
-            {userLogin}
-          </span>
+          <span className="text-sm opacity-70 font-mono">{userLogin}</span>
           <button
             onClick={() => signOut()}
             className="text-sm opacity-70 hover:opacity-100 transition-opacity cursor-pointer"

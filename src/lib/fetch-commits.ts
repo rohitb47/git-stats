@@ -70,8 +70,8 @@ export async function fetchCommits(accessToken: string): Promise<CommitData> {
           return {
             hash: c.sha.substring(0, 8),
             repo: repo.name,
-            date: d.toISOString().substring(0, 10),
-            hour: d.getHours(),
+            date: d.toISOString().substring(0, 10), // UTC; client re-derives from timestamp
+            hour: d.getUTCHours(), // UTC; client re-derives from timestamp
             message: c.commit.message.split("\n")[0].substring(0, 100),
             timestamp: d.getTime(),
           };
