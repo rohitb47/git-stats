@@ -86,6 +86,9 @@ export default async function RootLayout({
             <a href="/about" className="hover:opacity-80 transition-opacity">
               about
             </a>
+            <a href="/todo" className="hover:opacity-80 transition-opacity">
+              todo
+            </a>
             <a
               href="https://github.com/rohitb47/git-stats"
               target="_blank"

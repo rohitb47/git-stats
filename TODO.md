@@ -2,7 +2,10 @@
 
 ## pending
 
-- [ ] ...
+- [ ] responsiveness — mobile/tablet layout for all pages
+- [ ] timezone selection — let user pick their timezone for commit activity charts
+- [ ] public stats page — `/[username]` route showing public GitHub stats given a username (no auth required)
+- [ ] copyable components — click-to-copy on stat cards, charts, and code snippets
 
 ## done
 
