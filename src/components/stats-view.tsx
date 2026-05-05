@@ -44,7 +44,7 @@ function formatDate(dateStr: string): string {
 function DailyChart({ data }: { data: { label: string; value: number }[] }) {
   if (data.length === 0)
     return (
-      <div className="h-32 flex items-center text-xs opacity-40">no data</div>
+      <div className="h-32 flex items-center text-xs opacity-70">no data</div>
     );
 
   const maxVal = Math.max(...data.map((d) => d.value), 1);
@@ -348,13 +348,17 @@ function Stat({
       >
         {value}
       </div>
-      <div className="text-sm opacity-55 mt-2">{label}</div>
+      <div className="text-sm opacity-70 mt-2">{label}</div>
     </div>
   );
 }
 
 function ChartLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm tracking-wide opacity-50 mb-4">{children}</p>;
+  return (
+    <p className="text-sm tracking-wide opacity-70 mb-4">
+      {children}
+    </p>
+  );
 }
 
 // ─── StatsView ────────────────────────────────────────────────────────────────
@@ -477,7 +481,7 @@ export default function StatsView({
       {/* header */}
       <div className="flex items-center justify-between">
         <h1 className="text-base font-medium tracking-tight">
-          git stats
+          git-stats
         </h1>
         <div className="flex items-center gap-3">
           {userImage && (
@@ -485,20 +489,22 @@ export default function StatsView({
             <img
               src={userImage}
               alt={userLogin}
-              className="w-7 h-7 rounded-full opacity-50"
+              className="w-7 h-7 rounded-full opacity-70"
             />
           )}
-          <span className="text-sm opacity-60 font-mono">{userLogin}</span>
+          <span className="text-sm opacity-70 font-mono">
+            {userLogin}
+          </span>
           <button
             onClick={() => signOut()}
-            className="text-sm opacity-50 hover:opacity-80 transition-opacity cursor-pointer"
+            className="text-sm opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
           >
             sign out
           </button>
           <button
             onClick={refresh}
             disabled={loading}
-            className="text-sm opacity-50 hover:opacity-80 transition-opacity disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed"
+            className="text-sm opacity-70 hover:opacity-100 transition-opacity disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? "loading…" : "refresh"}
           </button>
@@ -507,7 +513,7 @@ export default function StatsView({
 
       {error && <p className="text-sm text-red-400 opacity-80">{error}</p>}
 
-      <p className="text-sm opacity-50 -mt-6">
+      <p className="text-sm opacity-70 -mt-6">
         {data.repoCount} repos scanned &middot; {data.commits.length} commits in
         past 10 days
       </p>
@@ -521,7 +527,7 @@ export default function StatsView({
             className={`px-4 py-1.5 text-sm rounded transition-all cursor-pointer ${
               filter === f.id
                 ? "bg-emerald-500/10 text-emerald-500"
-                : "opacity-45 hover:opacity-70"
+                : "opacity-70 hover:opacity-100"
             }`}
           >
             {f.label}

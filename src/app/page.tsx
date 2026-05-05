@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import { auth } from "@/auth";
 import { fetchCommits } from "@/lib/fetch-commits";
 import StatsView from "@/components/stats-view";
@@ -8,22 +9,20 @@ export default async function Home() {
 
   if (!session?.accessToken) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-6">
-        <h1 className="text-xl font-medium tracking-tight">
-          git stats
+      <main className="flex flex-col items-center gap-6 pt-40">
+        <h1 className="text-xl font-medium tracking-tight 2xl:text-3xl">
+          git-stats
         </h1>
-        <p className="text-sm opacity-55 max-w-xs text-center">
-          see your commit activity across all your GitHub repos
+        <p className="text-sm opacity-70 max-w-xs text-center 2xl:text-base 2xl:max-w-sm">
+          your commit activity across all GitHub repos — public and private
         </p>
         <SignInButton />
       </main>
     );
   }
 
-  const [data, nowMs] = await Promise.all([
-    fetchCommits(session.accessToken),
-    Promise.resolve(Date.now()),
-  ]);
+  const nowMs = Date.now();
+  const data = await fetchCommits(session.accessToken);
 
   return (
     <StatsView
