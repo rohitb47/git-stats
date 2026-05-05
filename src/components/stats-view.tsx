@@ -21,8 +21,18 @@ function formatHourFull(h: number): string {
 }
 
 const MONTHS = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 function formatDate(dateStr: string): string {
   const [, m, d] = dateStr.split("-");
@@ -34,7 +44,7 @@ function formatDate(dateStr: string): string {
 function DailyChart({ data }: { data: { label: string; value: number }[] }) {
   if (data.length === 0)
     return (
-      <div className="h-32 flex items-center text-xs opacity-20">no data</div>
+      <div className="h-32 flex items-center text-xs opacity-40">no data</div>
     );
 
   const maxVal = Math.max(...data.map((d) => d.value), 1);
@@ -49,17 +59,14 @@ function DailyChart({ data }: { data: { label: string; value: number }[] }) {
 
   const pts = data.map((d, i) => ({
     x:
-      padL +
-      (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW),
+      padL + (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW),
     y: padT + innerH - (d.value / maxVal) * innerH,
     label: d.label,
     value: d.value,
   }));
 
   const linePath = pts
-    .map(
-      (p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`,
-    )
+    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
     .join(" ");
 
   const areaPath =
@@ -92,23 +99,23 @@ function DailyChart({ data }: { data: { label: string; value: number }[] }) {
               x2={padL + innerW}
               y2={y}
               stroke="currentColor"
-              strokeOpacity={0.07}
+              strokeOpacity={0.12}
               strokeDasharray="3 3"
             />
             <text
               x={padL - 5}
               y={y + 3}
               textAnchor="end"
-              fontSize={8}
+              fontSize={10}
               fill="currentColor"
-              fillOpacity={0.3}
+              fillOpacity={0.55}
             >
               {v}
             </text>
           </g>
         );
       })}
-      <path d={areaPath} fill="#10b981" fillOpacity={0.07} />
+      <path d={areaPath} fill="#10b981" fillOpacity={0.1} />
       <path
         d={linePath}
         stroke="#10b981"
@@ -131,7 +138,7 @@ function DailyChart({ data }: { data: { label: string; value: number }[] }) {
               x={p.x}
               y={p.y - 7}
               textAnchor="middle"
-              fontSize={8}
+              fontSize={10}
               fill="#10b981"
               fillOpacity={0.7}
             >
@@ -148,9 +155,9 @@ function DailyChart({ data }: { data: { label: string; value: number }[] }) {
               textAnchor={
                 i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"
               }
-              fontSize={8}
+              fontSize={10}
               fill="currentColor"
-              fillOpacity={0.3}
+              fillOpacity={0.55}
             >
               {p.label}
             </text>
@@ -203,16 +210,16 @@ function HourlyChart({
               x2={padL + innerW}
               y2={y}
               stroke="currentColor"
-              strokeOpacity={0.07}
+              strokeOpacity={0.12}
               strokeDasharray="3 3"
             />
             <text
               x={padL - 5}
               y={y + 3}
               textAnchor="end"
-              fontSize={8}
+              fontSize={10}
               fill="currentColor"
-              fillOpacity={0.3}
+              fillOpacity={0.55}
             >
               {v}
             </text>
@@ -233,13 +240,7 @@ function HourlyChart({
               height={barH > 0 ? barH : 1}
               fill={inPeak ? "#10b981" : "currentColor"}
               fillOpacity={
-                inPeak
-                  ? d.value > 0
-                    ? 0.85
-                    : 0.08
-                  : d.value > 0
-                    ? 0.18
-                    : 0.05
+                inPeak ? (d.value > 0 ? 0.85 : 0.08) : d.value > 0 ? 0.18 : 0.05
               }
               rx={1}
             />
@@ -248,9 +249,9 @@ function HourlyChart({
                 x={x + barW / 2}
                 y={y - 4}
                 textAnchor="middle"
-                fontSize={7}
+                fontSize={9}
                 fill={inPeak ? "#10b981" : "currentColor"}
-                fillOpacity={inPeak ? 0.9 : 0.4}
+                fillOpacity={inPeak ? 0.95 : 0.6}
               >
                 {d.value}
               </text>
@@ -263,9 +264,9 @@ function HourlyChart({
                 x={x + barW / 2}
                 y={H - 6}
                 textAnchor="middle"
-                fontSize={8}
+                fontSize={10}
                 fill="currentColor"
-                fillOpacity={0.3}
+                fillOpacity={0.55}
               >
                 {formatHourShort(i)}
               </text>
@@ -343,21 +344,17 @@ function Stat({
   return (
     <div>
       <div
-        className={`text-2xl font-light tabular-nums leading-none ${accent ? "text-emerald-500" : ""}`}
+        className={`text-4xl font-light tabular-nums leading-none ${accent ? "text-emerald-500" : ""}`}
       >
         {value}
       </div>
-      <div className="text-xs opacity-30 mt-1.5">{label}</div>
+      <div className="text-sm opacity-55 mt-2">{label}</div>
     </div>
   );
 }
 
 function ChartLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs uppercase tracking-widest opacity-20 mb-3">
-      {children}
-    </p>
-  );
+  return <p className="text-sm tracking-wide opacity-50 mb-4">{children}</p>;
 }
 
 // ─── StatsView ────────────────────────────────────────────────────────────────
@@ -366,10 +363,12 @@ export default function StatsView({
   initialData,
   userImage,
   userLogin,
+  nowMs,
 }: {
   initialData: CommitData;
   userImage: string | null;
   userLogin: string;
+  nowMs: number;
 }) {
   const [data, setData] = useState<CommitData>(initialData);
   const [filter, setFilter] = useState<Filter>("10d");
@@ -393,25 +392,26 @@ export default function StatsView({
 
   const { dailyData, hourlyData, stats } = useMemo(() => {
     const commits: Commit[] = data.commits;
-    const now = new Date();
-    const todayStr = now.toISOString().substring(0, 10);
+    // Use UTC throughout so server and client compute identical date strings
+    const nowUtc = new Date(nowMs);
+    nowUtc.setUTCHours(0, 0, 0, 0);
+    const todayStr = nowUtc.toISOString().substring(0, 10);
     const filterDef = FILTERS.find((f) => f.id === filter)!;
 
     let filtered: Commit[];
     if (filter === "today") {
       filtered = commits.filter((c) => c.date === todayStr);
     } else {
-      const cutoff = new Date(now);
-      cutoff.setHours(0, 0, 0, 0);
-      cutoff.setDate(cutoff.getDate() - filterDef.days + 1);
+      const cutoff = new Date(nowUtc);
+      cutoff.setUTCDate(cutoff.getUTCDate() - filterDef.days + 1);
       filtered = commits.filter((c) => c.timestamp >= cutoff.getTime());
     }
 
     const dayMap = new Map<string, number>();
     if (filter !== "today") {
       for (let i = filterDef.days - 1; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
+        const d = new Date(nowUtc);
+        d.setUTCDate(d.getUTCDate() - i);
         dayMap.set(d.toISOString().substring(0, 10), 0);
       }
       for (const c of filtered) {
@@ -470,13 +470,13 @@ export default function StatsView({
         peakDayCount,
       },
     };
-  }, [data, filter]);
+  }, [data, filter, nowMs]);
 
   return (
-    <main className="max-w-5xl mx-auto px-8 py-10 space-y-8">
+    <main className="container mx-auto px-12 py-14 space-y-10">
       {/* header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-sm font-medium opacity-40 tracking-tight">
+        <h1 className="text-base font-medium tracking-tight">
           git stats
         </h1>
         <div className="flex items-center gap-3">
@@ -485,29 +485,29 @@ export default function StatsView({
             <img
               src={userImage}
               alt={userLogin}
-              className="w-5 h-5 rounded-full opacity-50"
+              className="w-7 h-7 rounded-full opacity-50"
             />
           )}
-          <span className="text-xs opacity-25 font-mono">{userLogin}</span>
+          <span className="text-sm opacity-60 font-mono">{userLogin}</span>
           <button
             onClick={() => signOut()}
-            className="text-xs opacity-25 hover:opacity-50 transition-opacity cursor-pointer"
+            className="text-sm opacity-50 hover:opacity-80 transition-opacity cursor-pointer"
           >
             sign out
           </button>
           <button
             onClick={refresh}
             disabled={loading}
-            className="text-xs opacity-25 hover:opacity-50 transition-opacity disabled:opacity-15 cursor-pointer disabled:cursor-not-allowed"
+            className="text-sm opacity-50 hover:opacity-80 transition-opacity disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? "loading…" : "refresh"}
           </button>
         </div>
       </div>
 
-      {error && <p className="text-xs opacity-50">{error}</p>}
+      {error && <p className="text-sm text-red-400 opacity-80">{error}</p>}
 
-      <p className="text-xs opacity-25 -mt-4">
+      <p className="text-sm opacity-50 -mt-6">
         {data.repoCount} repos scanned &middot; {data.commits.length} commits in
         past 10 days
       </p>
@@ -518,10 +518,10 @@ export default function StatsView({
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className={`px-3 py-1 text-xs rounded transition-all cursor-pointer ${
+            className={`px-4 py-1.5 text-sm rounded transition-all cursor-pointer ${
               filter === f.id
                 ? "bg-emerald-500/10 text-emerald-500"
-                : "opacity-30 hover:opacity-60"
+                : "opacity-45 hover:opacity-70"
             }`}
           >
             {f.label}
@@ -530,7 +530,7 @@ export default function StatsView({
       </div>
 
       {/* stats row */}
-      <div className="grid grid-cols-4 gap-8 pt-1 pb-2 border-b border-current/5">
+      <div className="grid grid-cols-4 gap-10 pt-2 pb-4 border-b border-current/5">
         <Stat value={stats.total} label="commits" />
         <Stat value={stats.repos} label="repos" />
         <Stat

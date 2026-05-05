@@ -9,10 +9,10 @@ export default async function Home() {
   if (!session?.accessToken) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-6">
-        <h1 className="text-sm font-medium opacity-40 tracking-tight">
+        <h1 className="text-xl font-medium tracking-tight">
           git stats
         </h1>
-        <p className="text-xs opacity-30 max-w-xs text-center">
+        <p className="text-sm opacity-55 max-w-xs text-center">
           see your commit activity across all your GitHub repos
         </p>
         <SignInButton />
@@ -20,13 +20,17 @@ export default async function Home() {
     );
   }
 
-  const data = await fetchCommits(session.accessToken);
+  const [data, nowMs] = await Promise.all([
+    fetchCommits(session.accessToken),
+    Promise.resolve(Date.now()),
+  ]);
 
   return (
     <StatsView
       initialData={data}
       userImage={session.user?.image ?? null}
       userLogin={session.user?.login ?? data.login}
+      nowMs={nowMs}
     />
   );
 }

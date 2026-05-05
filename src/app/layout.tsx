@@ -17,6 +17,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
     >
       <body className="min-h-screen bg-background text-foreground">
