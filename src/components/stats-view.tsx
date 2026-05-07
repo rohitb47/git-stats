@@ -454,17 +454,107 @@ function Stat({
   );
 }
 
-function ChartSkeleton({ bars = false }: { bars?: boolean }) {
+// ─── Skeletons ────────────────────────────────────────────────────────────────
+
+const SKEL_HOURLY_H = [
+  0.28, 0.45, 0.62, 0.38, 0.55, 0.82, 0.74, 0.68, 0.5, 0.38, 0.28, 0.18, 0.35,
+  0.58, 0.72, 0.48, 0.78, 0.88, 0.7, 0.52, 0.38, 0.28, 0.18, 0.1,
+];
+
+function HourlyChartSkeleton() {
+  const W = 560,
+    H = 200,
+    padL = 28,
+    padR = 8,
+    padT = 16,
+    padB = 28;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const barSlot = innerW / 24;
+  const barW = barSlot * 0.6;
   return (
-    <div className="w-full h-50 flex items-end gap-0.75 px-1 animate-pulse">
-      {Array.from({ length: bars ? 24 : 10 }, (_, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-sm bg-current opacity-[0.07]"
-          style={{ height: `${20 + Math.abs(Math.sin(i * 1.7) * 65)}%` }}
-        />
-      ))}
-    </div>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full animate-pulse"
+      style={{ overflow: "visible" }}
+    >
+      {[0.5, 1].map((frac, gi) => {
+        const y = padT + innerH - frac * innerH;
+        return (
+          <line
+            key={gi}
+            x1={padL}
+            y1={y}
+            x2={padL + innerW}
+            y2={y}
+            stroke="currentColor"
+            strokeOpacity={0.08}
+            strokeDasharray="3 3"
+          />
+        );
+      })}
+      {SKEL_HOURLY_H.map((h, i) => {
+        const x = padL + i * barSlot + (barSlot - barW) / 2;
+        const bh = h * innerH;
+        return (
+          <rect
+            key={i}
+            x={x}
+            y={padT + innerH - bh}
+            width={barW}
+            height={bh}
+            fill="currentColor"
+            fillOpacity={0.1}
+            rx={1}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+const SKEL_REPO_FRACS = [0.88, 0.62, 0.44, 0.3, 0.18];
+
+function RepoChartSkeleton() {
+  const rowH = 28,
+    padL = 4,
+    padR = 40,
+    padT = 12,
+    W = 560;
+  const barMaxW = W - padL - padR;
+  const H = padT + SKEL_REPO_FRACS.length * rowH + 4;
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full animate-pulse"
+      style={{ overflow: "visible" }}
+    >
+      {SKEL_REPO_FRACS.map((frac, i) => {
+        const y = padT + i * rowH;
+        return (
+          <g key={i}>
+            <rect
+              x={padL}
+              y={y + 4}
+              width={barMaxW}
+              height={16}
+              fill="currentColor"
+              fillOpacity={0.04}
+              rx={3}
+            />
+            <rect
+              x={padL}
+              y={y + 4}
+              width={frac * barMaxW}
+              height={16}
+              fill="currentColor"
+              fillOpacity={0.1}
+              rx={3}
+            />
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -792,7 +882,7 @@ export default function StatsView({
                 {selectedDate ? ` on ${formatDate(selectedDate)}` : " today"}
               </ChartLabel>
               {dateLoading ? (
-                <ChartSkeleton />
+                <RepoChartSkeleton />
               ) : (
                 <TodayRepoChart data={repoData} />
               )}
@@ -807,7 +897,7 @@ export default function StatsView({
         <div>
           <ChartLabel>commits by hour of day</ChartLabel>
           {dateLoading ? (
-            <ChartSkeleton bars />
+            <HourlyChartSkeleton />
           ) : (
             <HourlyChart data={hourlyData} peakStart={stats.peakStart} />
           )}
