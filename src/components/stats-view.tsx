@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import type { CommitData, Commit } from "@/lib/fetch-commits";
+import { Calendar } from "@/components/ui/calendar";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -334,7 +335,7 @@ function TodayRepoChart({ data }: { data: { repo: string; value: number }[] }) {
   if (data.length === 0)
     return (
       <div className="h-32 flex items-center text-xs opacity-70">
-        no commits today
+        no commits
       </div>
     );
 
@@ -472,8 +473,59 @@ export default function StatsView({
 }) {
   const [data, setData] = useState<CommitData>(initialData);
   const [filter, setFilter] = useState<Filter>("10d");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [dateData, setDateData] = useState<CommitData | null>(null);
+  const [dateLoading, setDateLoading] = useState(false);
+  const [activeDates, setActiveDates] = useState<Set<string> | null>(null);
+  const [calOpen, setCalOpen] = useState(false);
+  const calWrapRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // fetch the set of dates with commits (up to 1 year back) once on mount
+  useEffect(() => {
+    fetch("/api/git-stats/dates")
+      .then((res) => res.json())
+      .then((json: { dates?: string[]; error?: string }) => {
+        if (json.dates) setActiveDates(new Set(json.dates));
+      })
+      .catch(() => {
+        /* non-critical, calendar will just allow all dates */
+      });
+  }, []);
+
+  // fetch commits for specific selected date
+  useEffect(() => {
+    if (!selectedDate) {
+      setDateData(null);
+      return;
+    }
+    setDateLoading(true);
+    setError(null);
+    fetch(`/api/git-stats?date=${selectedDate}`)
+      .then((res) => res.json())
+      .then((json: CommitData & { error?: string }) => {
+        if (json.error) throw new Error(json.error);
+        setDateData(json);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "fetch failed"))
+      .finally(() => setDateLoading(false));
+  }, [selectedDate]);
+
+  // close calendar on outside click
+  useEffect(() => {
+    if (!calOpen) return;
+    function handle(e: MouseEvent) {
+      if (
+        calWrapRef.current &&
+        !calWrapRef.current.contains(e.target as Node)
+      ) {
+        setCalOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [calOpen]);
 
   async function refresh() {
     setLoading(true);
@@ -491,16 +543,25 @@ export default function StatsView({
   }
 
   const { dailyData, hourlyData, repoData, stats } = useMemo(() => {
-    const commits: Commit[] = data.commits;
+    // For a selected date, use the freshly-fetched dateData; fall back to initialData window
+    const activeData = selectedDate
+      ? (dateData ?? { commits: [], repoCount: 0, login: data.login })
+      : data;
+    const commits: Commit[] = activeData.commits;
     // Use viewer's local timezone for all date math
     const nowLocal = new Date(nowMs);
     nowLocal.setHours(0, 0, 0, 0);
     const todayStr = localDateStr(nowLocal.getTime());
     const filterDef = FILTERS.find((f) => f.id === filter)!;
 
+    const isDateView = selectedDate !== "" || filter === "today";
+    const targetDate = selectedDate || todayStr;
+
     let filtered: Commit[];
-    if (filter === "today") {
-      filtered = commits.filter((c) => localDateStr(c.timestamp) === todayStr);
+    if (isDateView) {
+      filtered = commits.filter(
+        (c) => localDateStr(c.timestamp) === targetDate,
+      );
     } else {
       const cutoff = new Date(nowLocal);
       cutoff.setDate(cutoff.getDate() - filterDef.days + 1);
@@ -508,7 +569,7 @@ export default function StatsView({
     }
 
     const dayMap = new Map<string, number>();
-    if (filter !== "today") {
+    if (!isDateView) {
       for (let i = filterDef.days - 1; i >= 0; i--) {
         const d = new Date(nowLocal);
         d.setDate(d.getDate() - i);
@@ -560,9 +621,9 @@ export default function StatsView({
       }
     }
 
-    // repo breakdown for today view
+    // repo breakdown for date/today view
     const repoMap = new Map<string, number>();
-    if (filter === "today") {
+    if (isDateView) {
       for (const c of filtered) {
         repoMap.set(c.repo, (repoMap.get(c.repo) ?? 0) + 1);
       }
@@ -584,7 +645,9 @@ export default function StatsView({
         peakDayCount,
       },
     };
-  }, [data, filter, nowMs]);
+  }, [data, dateData, filter, selectedDate, nowMs]);
+
+  const maxDateStr = localDateStr(nowMs);
 
   return (
     <main className="container mx-auto px-12 py-14 space-y-10">
@@ -625,13 +688,16 @@ export default function StatsView({
       </p>
 
       {/* filter tabs */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 items-center">
         {FILTERS.map((f) => (
           <button
             key={f.id}
-            onClick={() => setFilter(f.id)}
+            onClick={() => {
+              setFilter(f.id);
+              setSelectedDate("");
+            }}
             className={`px-4 py-1.5 text-sm rounded transition-all cursor-pointer ${
-              filter === f.id
+              filter === f.id && selectedDate === ""
                 ? "bg-emerald-500/10 text-emerald-500"
                 : "opacity-70 hover:opacity-100"
             }`}
@@ -639,6 +705,49 @@ export default function StatsView({
             {f.label}
           </button>
         ))}
+        <div ref={calWrapRef} className="relative">
+          <button
+            onClick={() => setCalOpen((o) => !o)}
+            className={`px-4 py-1.5 text-sm rounded transition-all cursor-pointer ${
+              selectedDate !== ""
+                ? "bg-emerald-500/10 text-emerald-500"
+                : "opacity-70 hover:opacity-100"
+            }`}
+          >
+            {selectedDate ? formatDate(selectedDate) : "pick date"}
+            {dateLoading && " …"}
+          </button>
+          {calOpen && (
+            <div className="absolute left-0 top-full mt-1 z-50 rounded-lg border border-current/10 bg-background shadow-lg">
+              <Calendar
+                mode="single"
+                selected={
+                  selectedDate
+                    ? new Date(selectedDate + "T12:00:00")
+                    : undefined
+                }
+                onSelect={(date) => {
+                  if (date) {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, "0");
+                    const d = String(date.getDate()).padStart(2, "0");
+                    setSelectedDate(`${y}-${m}-${d}`);
+                  } else {
+                    setSelectedDate("");
+                  }
+                  setCalOpen(false);
+                }}
+                disabled={(date) => {
+                  const ds = localDateStr(date.getTime());
+                  if (ds > maxDateStr) return true;
+                  // if we have the active dates set, disable days with no commits
+                  if (activeDates) return !activeDates.has(ds);
+                  return false;
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* stats row */}
@@ -663,9 +772,12 @@ export default function StatsView({
       {/* charts */}
       <div className="grid grid-cols-2 gap-10">
         <div>
-          {filter === "today" ? (
+          {filter === "today" || selectedDate !== "" ? (
             <>
-              <ChartLabel>repos touched today</ChartLabel>
+              <ChartLabel>
+                repos touched
+                {selectedDate ? ` on ${formatDate(selectedDate)}` : " today"}
+              </ChartLabel>
               <TodayRepoChart data={repoData} />
             </>
           ) : (
