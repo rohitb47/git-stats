@@ -454,6 +454,20 @@ function Stat({
   );
 }
 
+function ChartSkeleton({ bars = false }: { bars?: boolean }) {
+  return (
+    <div className="w-full h-50 flex items-end gap-0.75 px-1 animate-pulse">
+      {Array.from({ length: bars ? 24 : 10 }, (_, i) => (
+        <div
+          key={i}
+          className="flex-1 rounded-sm bg-current opacity-[0.07]"
+          style={{ height: `${20 + Math.abs(Math.sin(i * 1.7) * 65)}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function ChartLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-sm tracking-wide opacity-70 mb-4">{children}</p>;
 }
@@ -715,7 +729,6 @@ export default function StatsView({
             }`}
           >
             {selectedDate ? formatDate(selectedDate) : "pick date"}
-            {dateLoading && " …"}
           </button>
           {calOpen && (
             <div className="absolute left-0 top-full mt-1 z-50 rounded-lg border border-current/10 bg-background shadow-lg">
@@ -778,7 +791,11 @@ export default function StatsView({
                 repos touched
                 {selectedDate ? ` on ${formatDate(selectedDate)}` : " today"}
               </ChartLabel>
-              <TodayRepoChart data={repoData} />
+              {dateLoading ? (
+                <ChartSkeleton />
+              ) : (
+                <TodayRepoChart data={repoData} />
+              )}
             </>
           ) : (
             <>
@@ -789,7 +806,11 @@ export default function StatsView({
         </div>
         <div>
           <ChartLabel>commits by hour of day</ChartLabel>
-          <HourlyChart data={hourlyData} peakStart={stats.peakStart} />
+          {dateLoading ? (
+            <ChartSkeleton bars />
+          ) : (
+            <HourlyChart data={hourlyData} peakStart={stats.peakStart} />
+          )}
         </div>
       </div>
     </main>
